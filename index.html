@@ -5,113 +5,123 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>水準測量</title>
   <style>
-    :root{
-      --bd:#d0d7de;
-      --bg:#ffffff;
-      --bg2:#f6f8fa;
-      --sum:#fff8c5;
-      --txt:#24292f;
-      --muted:#57606a;
-      --radius:10px;
-    }
-    body{
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-      margin: 16px;
-      color: var(--txt);
-      background: var(--bg);
-      -webkit-text-size-adjust: 100%;
-    }
-    h1{ margin:0 0 10px; font-size: 18px; }
-    .note{ color:var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+  :root{
+    --bd:#d0d7de;
+    --bg:#ffffff;
+    --bg2:#f6f8fa;
+    --sum:#fff8c5;
+    --txt:#24292f;
+    --muted:#57606a;
+    --radius:10px;
+  }
 
-    .wrap{
-      overflow:auto;
-      border:1px solid var(--bd);
-      border-radius: var(--radius);
-      -webkit-overflow-scrolling: touch;
-      max-width: 100%;
-    }
+  body{
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    margin: 12px;
+    color: var(--txt);
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
 
-    table{
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 860px; /* still scrollable horizontally on small phones */
-      background: var(--bg);
-    }
+  h1{ margin:0 0 10px; font-size: 18px; }
+  .note{ color:var(--muted); font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
 
-    thead th{
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      background: var(--bg2);
-      border:1px solid var(--bd);
-      padding: 10px 6px;
-      text-align:center;
-      font-weight:700;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    thead tr:nth-child(2) th{
-      top: 42px; /* approximate height of first header row */
-      z-index: 3;
-    }
+  /* no horizontal scrolling container */
+  .wrap{
+    overflow: visible;
+    border:1px solid var(--bd);
+    border-radius: var(--radius);
+    max-width: 100%;
+  }
 
-    tbody td, tfoot td{
-      border:1px solid var(--bd);
-      padding: 6px;
-      text-align:center;
-      font-size: 13px;
-      white-space: nowrap;
-    }
+  table{
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;   /* key: fit to screen */
+    background: var(--bg);
+  }
 
-    input{
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px 8px;          /* bigger tap target */
-      border: 1px solid var(--bd);
-      border-radius: 8px;
-      font-size: 14px;
-      text-align: center;         /* centered as requested */
-      background: #fff;
-      min-height: 44px;           /* mobile-friendly touch height */
-    }
-    input[readonly]{
-      background:#fbfbfb;
-      color:#111;
-    }
+  thead th{
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--bg2);
+    border:1px solid var(--bd);
+    padding: 8px 4px;
+    text-align:center;
+    font-weight:700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  thead tr:nth-child(2) th{
+    top: 38px;
+    z-index: 3;
+  }
 
-    tfoot td{
-      position: sticky;
-      bottom: 0;
-      z-index: 2;
-      background: var(--sum);
-      font-weight: 700;
-    }
-    tfoot input{ font-weight: 700; }
+  tbody td, tfoot td{
+    border:1px solid var(--bd);
+    padding: 4px;
+    text-align:center;
+    font-size: 12px;
+    white-space: nowrap;
+  }
 
-    .btns{
-      display:flex;
-      gap:10px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-    button{
-      border:1px solid var(--bd);
-      background: var(--bg2);
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor:pointer;
-      font-size: 14px;
-      min-height: 44px;
-    }
+  input{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 4px;
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+    background: #fff;
+    min-height: 36px; /* still tap-friendly but smaller to fit */
+  }
 
-    @media (max-width: 480px){
-      body{ margin: 12px; }
-      h1{ font-size: 17px; }
-      .note{ font-size: 12px; }
-      table{ min-width: 820px; }
-    }
-  </style>
+  input[readonly]{
+    background:#fbfbfb;
+    color:#111;
+  }
+
+  tfoot td{
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--sum);
+    font-weight: 700;
+  }
+  tfoot input{ font-weight: 700; }
+
+  .btns{
+    display:flex;
+    gap:10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  button{
+    border:1px solid var(--bd);
+    background: var(--bg2);
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor:pointer;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  /* Column widths: tune to fit */
+  th:nth-child(1), td:nth-child(1){ width: 12%; } /* 番号 */
+  th:nth-child(2), td:nth-child(2){ width: 18%; } /* 距離 */
+  th:nth-child(3), td:nth-child(3){ width: 18%; } /* 後視 */
+  th:nth-child(4), td:nth-child(4){ width: 18%; } /* 前視 */
+  th:nth-child(5), td:nth-child(5){ width: 17%; } /* 高低差 + */
+  th:nth-child(6), td:nth-child(6){ width: 17%; } /* 高低差 - */
+
+  /* Extra small phones: reduce text a bit more */
+  @media (max-width: 360px){
+    thead th{ font-size: 11px; padding: 6px 3px; }
+    input{ font-size: 12px; min-height: 34px; }
+  }
+</style>
 </head>
 <body>
   <h1>水準測量（27行 + 合計行）</h1>
@@ -274,3 +284,4 @@
 </script>
 </body>
 </html>
+
