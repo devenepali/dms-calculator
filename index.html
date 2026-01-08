@@ -26,12 +26,11 @@
     h1{ margin:0 0 10px; font-size: 18px; }
     .note{ color:var(--muted); font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
 
-    /* Fit to screen, no horizontal scroll */
     .wrap{
-      overflow: visible;
       border:1px solid var(--bd);
       border-radius: var(--radius);
       max-width: 100%;
+      overflow: hidden;
     }
 
     table{
@@ -77,37 +76,41 @@
       background: #fff;
       min-height: 36px;
       font-variant-numeric: tabular-nums;
-      letter-spacing: 0;
     }
 
-    /* readonly result cells */
     input[readonly]{
       background:#fbfbfb;
       color:#111;
-      font-size: 13px; /* keep readable */
-      padding: 6px 2px;
     }
 
-    /* Make specific columns smaller to free space */
+    /* Make some columns smaller, results bigger */
     .col-no input{ font-size: 11px; padding: 6px 1px; }
     .col-dist input{ font-size: 11px; padding: 6px 1px; }
-
-    /* Make +/- result columns bigger and prevent clipping */
     .col-plus input[readonly],
     .col-minus input[readonly]{
-      font-size: 14px;      /* slightly larger */
+      font-size: 14px;
       padding: 6px 1px;
-      text-overflow: clip;
     }
 
+    /* Column widths (prioritize result columns) */
+    th:nth-child(1), td:nth-child(1){ width: 8%; }   /* 番号 */
+    th:nth-child(2), td:nth-child(2){ width: 12%; }  /* 距離 */
+    th:nth-child(3), td:nth-child(3){ width: 16%; }  /* 後視 */
+    th:nth-child(4), td:nth-child(4){ width: 16%; }  /* 前視 */
+    th:nth-child(5), td:nth-child(5){ width: 24%; }  /* 高低差 + */
+    th:nth-child(6), td:nth-child(6){ width: 24%; }  /* 高低差 - */
+
     tfoot td{
-      position: sticky;
-      bottom: 0;
-      z-index: 2;
       background: var(--sum);
       font-weight: 700;
     }
     tfoot input{ font-weight: 700; }
+
+    .section-sep{
+      height: 10px;
+      border-top: 2px solid var(--bd);
+      margin: 10px 0;
+    }
 
     .btns{
       display:flex;
@@ -125,30 +128,38 @@
       min-height: 44px;
     }
 
-    /* Column widths: prioritize 高低差 (+/-) */
-    /* Total = 100% */
-    th:nth-child(1), td:nth-child(1){ width: 8%; }   /* 番号 (smaller) */
-    th:nth-child(2), td:nth-child(2){ width: 12%; }  /* 距離 (smaller) */
-    th:nth-child(3), td:nth-child(3){ width: 16%; }  /* 後視 */
-    th:nth-child(4), td:nth-child(4){ width: 16%; }  /* 前視 */
-    th:nth-child(5), td:nth-child(5){ width: 24%; }  /* 高低差 + (bigger) */
-    th:nth-child(6), td:nth-child(6){ width: 24%; }  /* 高低差 - (bigger) */
+    .addrow{
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      line-height: 1;
+      min-height: 36px;
+      border: 1px dashed var(--bd);
+      background: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .addrow:active{ filter: brightness(0.97); }
 
-    /* Very small phones */
     @media (max-width: 360px){
       thead th{ font-size: 11px; padding: 6px 2px; }
       input{ font-size: 12px; min-height: 34px; }
-      .col-no input, .col-dist input{ font-size: 10px; }
       .col-plus input[readonly], .col-minus input[readonly]{ font-size: 13px; }
     }
   </style>
 </head>
 <body>
-  <h1>水準測量手簿
-</h1>
+  <h1>水準測量</h1>
+  <div class="note">
+    計算: <b>Δ = 後視 − 前視</b><br/>
+    Δ &gt; 0 → 高低差(＋) に <b>|Δ|</b>、Δ &lt; 0 → 高低差(－) に <b>|Δ|</b>（常に正の値、3桁小数）
+  </div>
 
   <div class="wrap">
-    <table>
+    <table id="table1">
       <thead>
         <tr>
           <th rowspan="2">番号</th>
@@ -162,27 +173,56 @@
           <th>－</th>
         </tr>
       </thead>
-      <tbody id="body"></tbody>
+      <tbody id="body1"></tbody>
       <tfoot>
         <tr>
           <td>合計</td>
-          <td><input id="sum_dist" readonly></td>
-          <td><input id="sum_bs" readonly></td>
-          <td><input id="sum_fs" readonly></td>
-          <td><input id="sum_plus" readonly></td>
-          <td><input id="sum_minus" readonly></td>
+          <td><input id="sum1_dist" readonly></td>
+          <td><input id="sum1_bs" readonly></td>
+          <td><input id="sum1_fs" readonly></td>
+          <td><input id="sum1_plus" readonly></td>
+          <td><input id="sum1_minus" readonly></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="section-sep"></div>
+
+    <table id="table2">
+      <thead>
+        <tr>
+          <th rowspan="2">番号</th>
+          <th rowspan="2">距離</th>
+          <th rowspan="2">後視</th>
+          <th rowspan="2">前視</th>
+          <th colspan="2">高低差</th>
+        </tr>
+        <tr>
+          <th>＋</th>
+          <th>－</th>
+        </tr>
+      </thead>
+      <tbody id="body2"></tbody>
+      <tfoot>
+        <tr>
+          <td>合計</td>
+          <td><input id="sum2_dist" readonly></td>
+          <td><input id="sum2_bs" readonly></td>
+          <td><input id="sum2_fs" readonly></td>
+          <td><input id="sum2_plus" readonly></td>
+          <td><input id="sum2_minus" readonly></td>
         </tr>
       </tfoot>
     </table>
   </div>
 
   <div class="btns">
-    <button id="fillNoBtn" type="button">番号を1〜27で自動入力</button>
+    <button id="fillNoBtn" type="button">番号を自動入力</button>
     <button id="clearBtn" type="button">全クリア</button>
   </div>
 
   <script>
-    const N = 27;
+    const INITIAL_ROWS = 10;
 
     function toHalfWidth(str){
       return (str ?? "")
@@ -207,8 +247,6 @@
       return (Math.round(x * 1000) / 1000).toFixed(3);
     }
 
-    const body = document.getElementById("body");
-
     function makeCellInput(id, readonly=false){
       const td = document.createElement("td");
       const inp = document.createElement("input");
@@ -222,46 +260,84 @@
       return td;
     }
 
-    function build(){
-      for (let i=1;i<=N;i++){
-        const tr = document.createElement("tr");
+    function makeAddRowButton(tableId){
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 6;
 
-        const tdNo   = makeCellInput(`no_${i}`);
-        const tdDist = makeCellInput(`dist_${i}`);
-        const tdBs   = makeCellInput(`bs_${i}`);   // 後視
-        const tdFs   = makeCellInput(`fs_${i}`);   // 前視
-        const tdPlus = makeCellInput(`plus_${i}`, true);
-        const tdMinus= makeCellInput(`minus_${i}`, true);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "addrow";
+      btn.textContent = "+";
+      btn.title = "行を追加";
 
-        tdNo.classList.add("col-no");
-        tdDist.classList.add("col-dist");
-        tdPlus.classList.add("col-plus");
-        tdMinus.classList.add("col-minus");
+      btn.addEventListener("click", ()=>{
+        addDataRow(tableId);
+        recalcAll();
+      });
 
-        tr.appendChild(tdNo);
-        tr.appendChild(tdDist);
-        tr.appendChild(tdBs);
-        tr.appendChild(tdFs);
-        tr.appendChild(tdPlus);
-        tr.appendChild(tdMinus);
-
-        body.appendChild(tr);
-
-        ["dist_", "bs_", "fs_"].forEach(p=>{
-          document.getElementById(`${p}${i}`).addEventListener("input", ()=>{
-            calcRow(i);
-            calcSums();
-          });
-        });
-      }
-      calcSums();
+      td.appendChild(btn);
+      tr.appendChild(td);
+      return tr;
     }
 
-    function calcRow(i){
-      const bs = parseNum(document.getElementById(`bs_${i}`).value); // 後視
-      const fs = parseNum(document.getElementById(`fs_${i}`).value); // 前視
-      const plusEl  = document.getElementById(`plus_${i}`);
-      const minusEl = document.getElementById(`minus_${i}`);
+    function addDataRow(tableId){
+      const body = document.getElementById(`body${tableId}`);
+      const rowIndex = body.querySelectorAll("tr[data-row='data']").length + 1;
+
+      const tr = document.createElement("tr");
+      tr.dataset.row = "data";
+
+      const tdNo   = makeCellInput(`t${tableId}_no_${rowIndex}`);
+      const tdDist = makeCellInput(`t${tableId}_dist_${rowIndex}`);
+      const tdBs   = makeCellInput(`t${tableId}_bs_${rowIndex}`);
+      const tdFs   = makeCellInput(`t${tableId}_fs_${rowIndex}`);
+      const tdPlus = makeCellInput(`t${tableId}_plus_${rowIndex}`, true);
+      const tdMinus= makeCellInput(`t${tableId}_minus_${rowIndex}`, true);
+
+      tdNo.classList.add("col-no");
+      tdDist.classList.add("col-dist");
+      tdPlus.classList.add("col-plus");
+      tdMinus.classList.add("col-minus");
+
+      tr.appendChild(tdNo);
+      tr.appendChild(tdDist);
+      tr.appendChild(tdBs);
+      tr.appendChild(tdFs);
+      tr.appendChild(tdPlus);
+      tr.appendChild(tdMinus);
+
+      // Insert before the "+" row if it exists; else append
+      const addRowTr = body.querySelector("tr[data-row='add']");
+      if (addRowTr) body.insertBefore(tr, addRowTr);
+      else body.appendChild(tr);
+
+      // listeners
+      [tdDist, tdBs, tdFs].forEach((td)=>{
+        td.querySelector("input").addEventListener("input", ()=>{
+          calcRow(tableId, rowIndex);
+          calcSums(tableId);
+        });
+      });
+    }
+
+    function addPlusRow(tableId){
+      const body = document.getElementById(`body${tableId}`);
+      const tr = makeAddRowButton(tableId);
+      tr.dataset.row = "add";
+      body.appendChild(tr);
+    }
+
+    function getRowCount(tableId){
+      const body = document.getElementById(`body${tableId}`);
+      return body.querySelectorAll("tr[data-row='data']").length;
+    }
+
+    function calcRow(tableId, i){
+      const bs = parseNum(document.getElementById(`t${tableId}_bs_${i}`).value); // 後視
+      const fs = parseNum(document.getElementById(`t${tableId}_fs_${i}`).value); // 前視
+      const plusEl  = document.getElementById(`t${tableId}_plus_${i}`);
+      const minusEl = document.getElementById(`t${tableId}_minus_${i}`);
 
       plusEl.value = "";
       minusEl.value = "";
@@ -269,45 +345,79 @@
       if (bs === null || fs === null) return;
 
       const d = bs - fs;      // Δ = 後視 - 前視
-      const a = Math.abs(d);  // show positive value
+      const a = Math.abs(d);  // always positive value displayed
 
       if (d > 0) plusEl.value = fmt(a);
       else if (d < 0) minusEl.value = fmt(a);
     }
 
-    function sumCol(prefix){
+    function sumCol(tableId, prefix){
       let s = 0;
       let any = false;
-      for (let i=1;i<=N;i++){
-        const v = parseNum(document.getElementById(`${prefix}${i}`).value);
+      const rows = getRowCount(tableId);
+      for (let i=1;i<=rows;i++){
+        const el = document.getElementById(`t${tableId}_${prefix}_${i}`);
+        if (!el) continue;
+        const v = parseNum(el.value);
         if (v !== null){ s += v; any = true; }
       }
       return any ? s : null;
     }
 
-    function calcSums(){
-      document.getElementById("sum_dist").value  = fmt(sumCol("dist_"));
-      document.getElementById("sum_bs").value    = fmt(sumCol("bs_"));
-      document.getElementById("sum_fs").value    = fmt(sumCol("fs_"));
-      document.getElementById("sum_plus").value  = fmt(sumCol("plus_"));
-      document.getElementById("sum_minus").value = fmt(sumCol("minus_"));
+    function calcSums(tableId){
+      document.getElementById(`sum${tableId}_dist`).value  = fmt(sumCol(tableId, "dist"));
+      document.getElementById(`sum${tableId}_bs`).value    = fmt(sumCol(tableId, "bs"));
+      document.getElementById(`sum${tableId}_fs`).value    = fmt(sumCol(tableId, "fs"));
+      document.getElementById(`sum${tableId}_plus`).value  = fmt(sumCol(tableId, "plus"));
+      document.getElementById(`sum${tableId}_minus`).value = fmt(sumCol(tableId, "minus"));
     }
 
-    document.getElementById("fillNoBtn").addEventListener("click", ()=>{
-      for (let i=1;i<=N;i++) document.getElementById(`no_${i}`).value = i;
-    });
+    function recalcAll(){
+      [1,2].forEach(t=>{
+        const rows = getRowCount(t);
+        for (let i=1;i<=rows;i++) calcRow(t, i);
+        calcSums(t);
+      });
+    }
 
+    function buildTable(tableId){
+      for (let i=0;i<INITIAL_ROWS;i++) addDataRow(tableId);
+      addPlusRow(tableId);
+      calcSums(tableId);
+    }
+
+    function fillNumbers(){
+      // Fill sequentially across both tables, skipping "+" rows
+      let n = 1;
+      [1,2].forEach(t=>{
+        const rows = getRowCount(t);
+        for (let i=1;i<=rows;i++){
+          const el = document.getElementById(`t${t}_no_${i}`);
+          if (el) el.value = n++;
+        }
+      });
+    }
+
+    function clearAll(){
+      [1,2].forEach(t=>{
+        const rows = getRowCount(t);
+        for (let i=1;i<=rows;i++){
+          ["no","dist","bs","fs","plus","minus"].forEach(p=>{
+            const el = document.getElementById(`t${t}_${p}_${i}`);
+            if (el) el.value = "";
+          });
+        }
+        calcSums(t);
+      });
+    }
+
+    document.getElementById("fillNoBtn").addEventListener("click", fillNumbers);
     document.getElementById("clearBtn").addEventListener("click", ()=>{
-      for (let i=1;i<=N;i++){
-        ["no_","dist_","bs_","fs_","plus_","minus_"].forEach(p=>{
-          document.getElementById(`${p}${i}`).value = "";
-        });
-      }
-      calcSums();
+      clearAll();
     });
 
-    build();
+    buildTable(1);
+    buildTable(2);
   </script>
 </body>
 </html>
-
