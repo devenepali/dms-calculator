@@ -1,67 +1,259 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DMSコンバーター & 梅岡さんツール</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>水準測量</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 400px; margin: 2rem auto; padding: 1rem; }
-    input, button { padding: 0.5rem; margin: 0.5rem 0; width: 100%; }
-    label { font-weight: bold; display: block; margin-top: 1rem; }
-    h1, h2 { text-align: center; }
-    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 2rem; border-radius: 8px; }
+    :root {
+      --bd: #d0d7de;
+      --bg: #ffffff;
+      --bg2: #f6f8fa;
+      --txt: #24292f;
+      --muted: #57606a;
+    }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      margin: 24px;
+      color: var(--txt);
+      background: var(--bg);
+    }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .note { color: var(--muted); font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+    .wrap { overflow-x: auto; border: 1px solid var(--bd); border-radius: 10px; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 900px;
+      background: var(--bg);
+    }
+    thead th {
+      background: var(--bg2);
+      border: 1px solid var(--bd);
+      padding: 8px 6px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    tbody td, tfoot td {
+      border: 1px solid var(--bd);
+      padding: 6px;
+      text-align: center;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 6px;
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: right;
+      background: #fff;
+    }
+    input[readonly] {
+      background: #fbfbfb;
+      color: #111;
+    }
+    .left { text-align: left; }
+    .idx input { text-align: center; }
+    tfoot td {
+      background: #fff8c5;
+      font-weight: 700;
+    }
+    .btns { display: flex; gap: 10px; margin: 12px 0 0; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--bd);
+      background: var(--bg2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button:hover { filter: brightness(0.98); }
   </style>
 </head>
 <body>
-  <h1>DMSコンバーター</h1>
-  <section>
-    <label for="degrees">度 (度):</label>
-    <input type="number" id="degrees" value="0" />
+  <h1>水準測量（27行 + 合計行）</h1>
+  <div class="note">
+    高低差は <b>Δ = 後視 − 前視</b> で計算。<br/>
+    Δ &gt; 0 のときは「高低差(+)」へ <b>abs(Δ)</b>、Δ &lt; 0 のときは「高低差(-)」へ <b>abs(Δ)</b> を入れます（常に正の値で表示）。
+  </div>
 
-    <label for="minutes">分 (分):</label>
-    <input type="number" id="minutes" value="0" />
+  <div class="wrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th rowspan="2">番号</th>
+          <th rowspan="2">距離</th>
+          <th rowspan="2">後視</th>
+          <th rowspan="2">前視</th>
+          <th colspan="2">高低差</th>
+        </tr>
+        <tr>
+          <th>＋</th>
+          <th>－</th>
+        </tr>
+      </thead>
+      <tbody id="body"></tbody>
+      <tfoot>
+        <tr id="sumRow">
+          <td class="left">合計</td>
+          <td><input id="sum_dist" readonly></td>
+          <td><input id="sum_bs" readonly></td>
+          <td><input id="sum_fs" readonly></td>
+          <td><input id="sum_plus" readonly></td>
+          <td><input id="sum_minus" readonly></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
 
-    <label for="seconds">秒 (秒):</label>
-    <input type="number" id="seconds" value="0" />
-
-    <button onclick="convertToDecimal()">10進数に変換</button>
-
-    <h2>結果:</h2>
-    <p id="result">0</p>
-  </section>
-
-  <h1>梅岡さんツール</h1>
-  <section>
-    <label for="input1">数値1:</label>
-    <input type="number" id="input1" value="0" />
-
-    <label for="input2">数値2:</label>
-    <input type="number" id="input2" value="0" />
-
-    <button onclick="umeokaTool()">計算する</button>
-
-    <h2>結果:</h2>
-    <p id="umeokaResult">0</p>
-  </section>
+  <div class="btns">
+    <button id="clearBtn" type="button">全クリア</button>
+    <button id="fillNoBtn" type="button">番号を1〜27で自動入力</button>
+  </div>
 
   <script>
-    function convertToDecimal() {
-      const deg = parseFloat(document.getElementById('degrees').value) || 0;
-      const min = parseFloat(document.getElementById('minutes').value) || 0;
-      const sec = parseFloat(document.getElementById('seconds').value) || 0;
+    const N = 27;
 
-      const decimal = deg + (min / 60) + (sec / 3600);
-      document.getElementById('result').textContent = decimal.toFixed(6) + '°';
+    const fmt = (x) => {
+      if (x === "" || x === null || typeof x === "undefined" || Number.isNaN(x)) return "";
+      // show up to 3 decimals without trailing noise
+      const s = (Math.round(x * 1000) / 1000).toString();
+      return s;
+    };
+
+    const parseNum = (v) => {
+      const t = (v ?? "").toString().trim();
+      if (t === "") return null;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const body = document.getElementById("body");
+
+    function makeRow(i) {
+      const tr = document.createElement("tr");
+
+      // 番号
+      tr.appendChild(tdInput(`no_${i}`, "", "idx", false, "center"));
+
+      // 距離
+      tr.appendChild(tdInput(`dist_${i}`, "", "", false));
+
+      // 後視
+      tr.appendChild(tdInput(`bs_${i}`, "", "", false));
+
+      // 前視
+      tr.appendChild(tdInput(`fs_${i}`, "", "", false));
+
+      // 高低差 + (readonly)
+      tr.appendChild(tdInput(`plus_${i}`, "", "", true));
+
+      // 高低差 - (readonly)
+      tr.appendChild(tdInput(`minus_${i}`, "", "", true));
+
+      // listeners
+      ["dist_", "bs_", "fs_"].forEach(prefix => {
+        const el = tr.querySelector(`#${prefix}${i}`);
+        el.addEventListener("input", () => {
+          calcRow(i);
+          calcSums();
+        });
+      });
+
+      // also recalc sums if number changes (not required, but ok)
+      tr.querySelector(`#no_${i}`).addEventListener("input", () => calcSums());
+
+      return tr;
     }
 
-    // Example function for 梅岡さんツール: adds two numbers
-    function umeokaTool() {
-      const val1 = parseFloat(document.getElementById('input1').value) || 0;
-      const val2 = parseFloat(document.getElementById('input2').value) || 0;
-
-      const sum = val1 + val2;
-      document.getElementById('umeokaResult').textContent = sum;
+    function tdInput(id, value, cls = "", ro = false, align = "right") {
+      const td = document.createElement("td");
+      if (cls) td.className = cls;
+      const inp = document.createElement("input");
+      inp.id = id;
+      inp.value = value;
+      inp.inputMode = "decimal";
+      inp.autocomplete = "off";
+      inp.spellcheck = false;
+      inp.style.textAlign = align;
+      if (ro) inp.readOnly = true;
+      td.appendChild(inp);
+      return td;
     }
+
+    function calcRow(i) {
+      const bs = parseNum(document.getElementById(`bs_${i}`).value);
+      const fs = parseNum(document.getElementById(`fs_${i}`).value);
+
+      const plusEl = document.getElementById(`plus_${i}`);
+      const minusEl = document.getElementById(`minus_${i}`);
+
+      plusEl.value = "";
+      minusEl.value = "";
+
+      if (bs === null || fs === null) return;
+
+      const d = bs - fs;
+      const a = Math.abs(d);
+
+      if (d > 0) plusEl.value = fmt(a);
+      else if (d < 0) minusEl.value = fmt(a);
+      else {
+        // d == 0 -> keep blank or show 0; choose blank by default
+        // plusEl.value = "0";
+      }
+    }
+
+    function sumCol(prefix) {
+      let s = 0;
+      let any = false;
+      for (let i = 1; i <= N; i++) {
+        const v = parseNum(document.getElementById(`${prefix}${i}`).value);
+        if (v !== null) { s += v; any = true; }
+      }
+      return any ? s : null;
+    }
+
+    function calcSums() {
+      const sd = sumCol("dist_");
+      const sbs = sumCol("bs_");
+      const sfs = sumCol("fs_");
+      const sp = sumCol("plus_");
+      const sm = sumCol("minus_");
+
+      document.getElementById("sum_dist").value = sd === null ? "" : fmt(sd);
+      document.getElementById("sum_bs").value   = sbs === null ? "" : fmt(sbs);
+      document.getElementById("sum_fs").value   = sfs === null ? "" : fmt(sfs);
+      document.getElementById("sum_plus").value = sp === null ? "" : fmt(sp);
+      document.getElementById("sum_minus").value= sm === null ? "" : fmt(sm);
+    }
+
+    // build table
+    for (let i = 1; i <= N; i++) body.appendChild(makeRow(i));
+
+    // buttons
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      for (let i = 1; i <= N; i++) {
+        ["no_", "dist_", "bs_", "fs_", "plus_", "minus_"].forEach(p => {
+          const el = document.getElementById(`${p}${i}`);
+          el.value = "";
+        });
+      }
+      calcSums();
+    });
+
+    document.getElementById("fillNoBtn").addEventListener("click", () => {
+      for (let i = 1; i <= N; i++) document.getElementById(`no_${i}`).value = i;
+      calcSums();
+    });
+
+    // initial sums
+    calcSums();
   </script>
 </body>
 </html>
