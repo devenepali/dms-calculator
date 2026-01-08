@@ -26,7 +26,7 @@
     h1{ margin:0 0 10px; font-size: 18px; }
     .note{ color:var(--muted); font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
 
-    /* No horizontal scrolling; fit to screen */
+    /* Fit to screen, no horizontal scroll */
     .wrap{
       overflow: visible;
       border:1px solid var(--bd);
@@ -37,7 +37,7 @@
     table{
       border-collapse: collapse;
       width: 100%;
-      table-layout: fixed;   /* key: fit columns to viewport */
+      table-layout: fixed;
       background: var(--bg);
     }
 
@@ -69,18 +69,35 @@
     input{
       width: 100%;
       box-sizing: border-box;
-      padding: 6px 4px;
+      padding: 6px 2px;
       border: 1px solid var(--bd);
       border-radius: 8px;
       font-size: 13px;
-      text-align: center;   /* centered as requested */
+      text-align: center;
       background: #fff;
-      min-height: 36px;     /* mobile friendly */
+      min-height: 36px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
     }
 
+    /* readonly result cells */
     input[readonly]{
       background:#fbfbfb;
       color:#111;
+      font-size: 13px; /* keep readable */
+      padding: 6px 2px;
+    }
+
+    /* Make specific columns smaller to free space */
+    .col-no input{ font-size: 11px; padding: 6px 1px; }
+    .col-dist input{ font-size: 11px; padding: 6px 1px; }
+
+    /* Make +/- result columns bigger and prevent clipping */
+    .col-plus input[readonly],
+    .col-minus input[readonly]{
+      font-size: 14px;      /* slightly larger */
+      padding: 6px 1px;
+      text-overflow: clip;
     }
 
     tfoot td{
@@ -108,24 +125,30 @@
       min-height: 44px;
     }
 
-    /* Column widths (sum ~ 100%) */
-    th:nth-child(1), td:nth-child(1){ width: 12%; } /* 番号 */
-    th:nth-child(2), td:nth-child(2){ width: 18%; } /* 距離 */
-    th:nth-child(3), td:nth-child(3){ width: 18%; } /* 後視 */
-    th:nth-child(4), td:nth-child(4){ width: 18%; } /* 前視 */
-    th:nth-child(5), td:nth-child(5){ width: 17%; } /* 高低差 + */
-    th:nth-child(6), td:nth-child(6){ width: 17%; } /* 高低差 - */
+    /* Column widths: prioritize 高低差 (+/-) */
+    /* Total = 100% */
+    th:nth-child(1), td:nth-child(1){ width: 8%; }   /* 番号 (smaller) */
+    th:nth-child(2), td:nth-child(2){ width: 12%; }  /* 距離 (smaller) */
+    th:nth-child(3), td:nth-child(3){ width: 16%; }  /* 後視 */
+    th:nth-child(4), td:nth-child(4){ width: 16%; }  /* 前視 */
+    th:nth-child(5), td:nth-child(5){ width: 24%; }  /* 高低差 + (bigger) */
+    th:nth-child(6), td:nth-child(6){ width: 24%; }  /* 高低差 - (bigger) */
 
+    /* Very small phones */
     @media (max-width: 360px){
-      thead th{ font-size: 11px; padding: 6px 3px; }
+      thead th{ font-size: 11px; padding: 6px 2px; }
       input{ font-size: 12px; min-height: 34px; }
+      .col-no input, .col-dist input{ font-size: 10px; }
+      .col-plus input[readonly], .col-minus input[readonly]{ font-size: 13px; }
     }
   </style>
 </head>
 <body>
-  <h1>水準測量手簿
-</h1>
-  
+  <h1>水準測量（27行 + 合計行）</h1>
+  <div class="note">
+    計算: <b>Δ = 後視 − 前視</b><br/>
+    Δ &gt; 0 → 高低差(＋) に <b>|Δ|</b>、Δ &lt; 0 → 高低差(－) に <b>|Δ|</b>（常に正の値で表示）
+  </div>
 
   <div class="wrap">
     <table>
@@ -164,7 +187,6 @@
   <script>
     const N = 27;
 
-    // Convert full-width digits/period/minus to half-width (mobile IME friendly)
     function toHalfWidth(str){
       return (str ?? "")
         .toString()
@@ -197,6 +219,7 @@
       inp.autocomplete = "off";
       inp.spellcheck = false;
       inp.inputMode = "decimal";
+      inp.type = "text";
       if (readonly) inp.readOnly = true;
       td.appendChild(inp);
       return td;
@@ -205,15 +228,28 @@
     function build(){
       for (let i=1;i<=N;i++){
         const tr = document.createElement("tr");
-        tr.appendChild(makeCellInput(`no_${i}`));
-        tr.appendChild(makeCellInput(`dist_${i}`));
-        tr.appendChild(makeCellInput(`bs_${i}`));   // 後視
-        tr.appendChild(makeCellInput(`fs_${i}`));   // 前視
-        tr.appendChild(makeCellInput(`plus_${i}`, true));
-        tr.appendChild(makeCellInput(`minus_${i}`, true));
+
+        const tdNo   = makeCellInput(`no_${i}`);
+        const tdDist = makeCellInput(`dist_${i}`);
+        const tdBs   = makeCellInput(`bs_${i}`);   // 後視
+        const tdFs   = makeCellInput(`fs_${i}`);   // 前視
+        const tdPlus = makeCellInput(`plus_${i}`, true);
+        const tdMinus= makeCellInput(`minus_${i}`, true);
+
+        tdNo.classList.add("col-no");
+        tdDist.classList.add("col-dist");
+        tdPlus.classList.add("col-plus");
+        tdMinus.classList.add("col-minus");
+
+        tr.appendChild(tdNo);
+        tr.appendChild(tdDist);
+        tr.appendChild(tdBs);
+        tr.appendChild(tdFs);
+        tr.appendChild(tdPlus);
+        tr.appendChild(tdMinus);
+
         body.appendChild(tr);
 
-        // Recalc on edit (distance included for sums)
         ["dist_", "bs_", "fs_"].forEach(p=>{
           document.getElementById(`${p}${i}`).addEventListener("input", ()=>{
             calcRow(i);
@@ -235,13 +271,11 @@
 
       if (bs === null || fs === null) return;
 
-      // Rule: Δ = 後視 - 前視
-      const d = bs - fs;
-      const a = Math.abs(d);
+      const d = bs - fs;      // Δ = 後視 - 前視
+      const a = Math.abs(d);  // show positive value
 
       if (d > 0) plusEl.value = fmt(a);
       else if (d < 0) minusEl.value = fmt(a);
-      // d == 0 -> keep blank
     }
 
     function sumCol(prefix){
